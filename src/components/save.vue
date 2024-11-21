@@ -1,8 +1,8 @@
 <!--
  * @Author: 秦少卫
  * @Date: 2022-09-03 19:16:55
- * @LastEditors: 秦少卫
- * @LastEditTime: 2024-05-11 15:49:01
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2024-11-21 16:19:01
  * @LastEditors: 秦少卫
  * @LastEditTime: 2023-04-10 14:33:18
  * @Description: 保存文件
@@ -20,7 +20,9 @@
       </Button>
       <template #list>
         <DropdownMenu>
-          <DropdownItem name="saveMyClould">{{ $t('save.save_my_spase') }}</DropdownItem>
+          <DropdownItem name="savePPT" divided>保存PPT</DropdownItem>
+          <DropdownItem name="savePDF" divided>保存PDF</DropdownItem>
+          <!-- <DropdownItem name="saveMyClould">{{ $t('save.save_my_spase') }}</DropdownItem> -->
           <DropdownItem name="saveImg" divided>{{ $t('save.save_as_picture') }}</DropdownItem>
           <DropdownItem name="saveSvg">{{ $t('save.save_as_svg') }}</DropdownItem>
           <DropdownItem name="clipboard" divided>{{ $t('save.copy_to_clipboard') }}</DropdownItem>
@@ -41,6 +43,8 @@ import { useI18n } from 'vue-i18n';
 import { Spin } from 'view-ui-plus';
 import { useRoute } from 'vue-router';
 import { Message } from 'view-ui-plus';
+import pptxgen from 'pptxgenjs';
+import { jsPDF } from 'jspdf';
 const route = useRoute();
 
 const { createTmplByCommon, updataTemplInfo, routerToId } = useMaterial();
@@ -59,6 +63,36 @@ const cbMap = {
   },
   saveJson() {
     canvasEditor.saveJson();
+  },
+  async savePPT() {
+    // canvasEditor
+    const dataURL = await canvasEditor.preview();
+    console.log(canvasEditor.canvas.getObjects());
+    const pptx = new pptxgen();
+    const slide = pptx.addSlide();
+
+    const elList = canvasEditor.canvas.getObjects();
+
+    elList.forEach((el) => {
+      if (el.id && el.id === 'workspace') return;
+    });
+    slide.addImage({
+      data: dataURL,
+      x: 0,
+      y: 0,
+      w: '100%', // 图片宽度（相对于幻灯片宽度的百分比）
+      h: '100%', // 图片高度（相对于幻灯片高度的百分比）
+      sizing: { type: 'contain' },
+    }); // 可选：设置大小调整模式});
+    slide.addText('demo');
+    pptx.writeFile('presentation.pptx');
+  },
+  async savePDF() {
+    const dataURL = await canvasEditor.preview();
+    const doc = new jsPDF();
+    doc.addImage(dataURL, 'PNG', 0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height);
+    console.log(dataURL);
+    doc.save('download.pdf');
   },
   saveSvg() {
     canvasEditor.saveSvg();

@@ -1,8 +1,8 @@
 <!--
  * @Author: 秦少卫
  * @Date: 2024-05-17 15:30:21
- * @LastEditors: 秦少卫
- * @LastEditTime: 2024-11-18 10:30:30
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2024-11-21 17:13:56
  * @Description: file content
 -->
 <template>
@@ -20,6 +20,7 @@
             <canvas id="canvas" :class="state.ruler ? 'design-stage-grid' : ''"></canvas>
             <dragMode v-if="state.show"></dragMode>
             <zoom></zoom>
+            <page v-if="state.show"></page>
           </div>
         </div>
         <Right v-if="state.show"></Right>
@@ -32,6 +33,7 @@
 import Top from './components/top/index.vue';
 import Left from './components/left/index.vue';
 import Right from './components/right/index.vue';
+import page from './components/page/index.vue';
 
 import zoom from '@/components/zoom.vue';
 import dragMode from '@/components/dragMode.vue';
