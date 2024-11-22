@@ -2,7 +2,7 @@
  * @Author: 秦少卫
  * @Date: 2022-09-03 19:16:55
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2024-11-21 16:19:01
+ * @LastEditTime: 2024-11-22 14:28:33
  * @LastEditors: 秦少卫
  * @LastEditTime: 2023-04-10 14:33:18
  * @Description: 保存文件
@@ -52,6 +52,15 @@ const { createTmplByCommon, updataTemplInfo, routerToId } = useMaterial();
 const { t } = useI18n();
 
 const { canvasEditor } = useSelect();
+
+onMounted(() => {
+  nextTick(() => {
+    canvasEditor.setSize(1280, 720);
+  });
+});
+
+const pageData = inject('pptPageData');
+
 const cbMap = {
   async clipboard() {
     try {
@@ -65,27 +74,68 @@ const cbMap = {
     canvasEditor.saveJson();
   },
   async savePPT() {
-    // canvasEditor
-    const dataURL = await canvasEditor.preview();
+    console.log('pageData', pageData.value);
+    /**
+     * 将像素转换为英寸
+     * @param {number} pixels - 要转换的像素值
+     * @param {number} dpi - DPI 值，默认为96
+     * @returns {number} - 转换后的英寸值
+     */
+    function pixelsToInches(pixels, dpi = 96) {
+      return pixels / dpi;
+    }
+
     console.log(canvasEditor.canvas.getObjects());
+
     const pptx = new pptxgen();
-    const slide = pptx.addSlide();
 
-    const elList = canvasEditor.canvas.getObjects();
+    pptx.defineLayout({ name: 'A4', width: 13.33, height: 7.5 });
+    pptx.layout = 'A4';
 
-    elList.forEach((el) => {
-      if (el.id && el.id === 'workspace') return;
+    const fnAddSlide = (key) => {
+      return new Promise((resolve) => {
+        const task = () => {
+          const slide = pptx.addSlide();
+          const elList = canvasEditor.canvas.getObjects();
+          elList.forEach(async (el) => {
+            if (el.id && el.id === 'workspace') return;
+            const { left, top, width, height, scaleX, scaleY, type } = el;
+            const x = pixelsToInches(left);
+            const y = pixelsToInches(top);
+            const w = pixelsToInches(width * scaleX);
+            const h = pixelsToInches(height * scaleY);
+            console.log(type);
+            if (type === 'image') {
+              slide.addImage({ path: el.src, x, y, w, h });
+            } else if (['circle', 'triangle', 'rect', 'polygon'].includes(type)) {
+              slide.addImage({ data: el.toDataURL(), x, y, w, h });
+            } else if (['text', 'textbox', 'i-text'].includes(type)) {
+              slide.addText(el.text, { fontSize: el.fontSize, x, y, color: '000000' });
+            }
+          });
+        };
+        if (Object.keys(pageData.value) === 1) {
+          task();
+          resolve();
+        } else {
+          canvasEditor.loadJSON(pageData.value[key].data, () => {
+            task();
+            resolve();
+          });
+        }
+      });
+    };
+
+    async function executeTasks() {
+      const keys = Object.keys(pageData.value);
+      for (const key of keys) {
+        await fnAddSlide(key);
+      }
+    }
+
+    executeTasks().then(() => {
+      pptx.writeFile('presentation.pptx');
     });
-    slide.addImage({
-      data: dataURL,
-      x: 0,
-      y: 0,
-      w: '100%', // 图片宽度（相对于幻灯片宽度的百分比）
-      h: '100%', // 图片高度（相对于幻灯片高度的百分比）
-      sizing: { type: 'contain' },
-    }); // 可选：设置大小调整模式});
-    slide.addText('demo');
-    pptx.writeFile('presentation.pptx');
   },
   async savePDF() {
     const dataURL = await canvasEditor.preview();

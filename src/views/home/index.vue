@@ -2,7 +2,7 @@
  * @Author: 秦少卫
  * @Date: 2024-05-17 15:30:21
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2024-11-21 17:13:56
+ * @LastEditTime: 2024-11-22 10:18:49
  * @Description: file content
 -->
 <template>
@@ -20,7 +20,7 @@
             <canvas id="canvas" :class="state.ruler ? 'design-stage-grid' : ''"></canvas>
             <dragMode v-if="state.show"></dragMode>
             <zoom></zoom>
-            <page v-if="state.show"></page>
+            <page v-if="state.show" :setPageData="(data:any) => (pageData = data)"></page>
           </div>
         </div>
         <Right v-if="state.show"></Right>
@@ -88,6 +88,11 @@ const state = reactive({
   ruler: true,
 });
 
+// =====
+const pageData = ref({});
+provide('pptPageData', pageData);
+// =====
+
 onMounted(() => {
   // 初始化fabric
   const canvas = new fabric.Canvas('canvas', {
@@ -147,7 +152,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => canvasEditor.destory());
-const rulerSwitch = (val) => {
+const rulerSwitch = (val: any) => {
   if (val) {
     canvasEditor.rulerEnable();
   } else {

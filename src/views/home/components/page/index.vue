@@ -5,11 +5,21 @@
 -->
 <script setup>
 import useSelect from '@/hooks/select';
+const props = defineProps(['setPageData']);
+
 const { canvasEditor } = useSelect();
 const historyMap = ref({});
 const currentIndex = ref(0);
 
 let defaultStr = '';
+
+watch(
+  () => historyMap.value,
+  (data) => {
+    props.setPageData?.(data);
+  },
+  { deep: true }
+);
 
 function transformText(objects) {
   if (!objects) return;
@@ -40,6 +50,7 @@ onMounted(() => {
   });
 
   canvasEditor.canvas.on('object:modified', saveStr);
+  canvasEditor.on('selectOne', saveStr);
 });
 
 const previewList = computed(() => {
@@ -68,7 +79,7 @@ const fnItemClick = async (i) => {
     <div v-for="(src, i) in previewList" :key="i" @click="fnItemClick(i)">
       <img
         :src="src"
-        :style="`width: 100px; height: 80px; background: #ccc; margin-right: 5px;border: 1px solid ${
+        :style="`width: 160px; height: 90px; background: #ccc; margin-right: 5px;border: 1px solid ${
           i === currentIndex ? 'red' : '#ccc'
         }`"
       />
